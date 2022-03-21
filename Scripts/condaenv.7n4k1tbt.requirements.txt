@@ -1,0 +1,10 @@
+numpy
+pandas
+PyQt5
+matplotlib
+pyqtgraph
+mediapipe
+python-time
+pyqt5-tools
+pyserial
+sklearn

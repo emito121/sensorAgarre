@@ -1,0 +1,16 @@
+name: agarre
+channels:
+- defaults
+dependencies:
+- python>=3.9
+- pip
+- pip:
+  - numpy
+  - pandas
+  - PyQt5
+  - matplotlib
+  - pyqtgraph
+  - python-time
+  - pyqt5-tools
+  - pyserial
+  - sklearn
