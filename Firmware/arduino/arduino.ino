@@ -35,7 +35,7 @@ void loop() {
 
 ISR(TIMER2_COMPA_vect)//Rutina interrupción Timer1, configurado a 10ms
 {
-  int valor = analogRead(A0)
-  Serial.write(valor);
+  byte valor = analogRead(A0);
+  //Serial.write(valor);
+  Serial.println(valor);
   }
-}
