@@ -51,7 +51,7 @@ border-radius :15px;
     <enum>Qt::Vertical</enum>
    </property>
   </widget>
-  <widget class="QWidget" name="">
+  <widget class="QWidget" name="layoutWidget">
    <property name="geometry">
     <rect>
      <x>10</x>
@@ -62,7 +62,7 @@ border-radius :15px;
    </property>
    <layout class="QVBoxLayout" name="verticalLayout">
     <item>
-     <widget class="QLabel" name="labelAnguloRodilla">
+     <widget class="QLabel" name="labelPeso">
       <property name="font">
        <font>
         <family>Comic Sans MS</family>

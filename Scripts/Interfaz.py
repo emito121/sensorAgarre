@@ -25,7 +25,7 @@ class MainWindow(QDialog):
         baudrate = int(self.lineBaudrate.text())
         fm = int(self.lineFM.text())
         Ventana = Visualizacion(puerto, baudrate, fm)
-        Ventana.show()
+        Ventana.exec_()
 
     def Cerrar(self):
         self.close()
@@ -51,15 +51,16 @@ class Visualizacion(QDialog):
         x= np.reshape(x,(-1,1))
         y= np.reshape(y,(-1,1))
 
-        # from sklearn.compose import TransformedTargetRegressor
+        from sklearn.compose import TransformedTargetRegressor
         # RFlog = TransformedTargetRegressor(RF,
         #                                   func = lambda x: x,
         #                                   inverse_func = lambda x: np.clip(x, 0, 1000))
 
-        self.RF.fit(x,y)
+        #self.RF.fit(x,y)
         self.RFlog = TransformedTargetRegressor(self.RF,
                                   func = lambda x: x,
                                   inverse_func = lambda x: np.clip(x, 0, 1000))
+        self.RFlog.fit(x,y)
         self.Worker1 = Worker1(puerto =puerto, baudrate = baudrate, fm = fm)
         self.Worker1.update.connect(self.actualizar)
         self.sampling = False
@@ -68,30 +69,34 @@ class Visualizacion(QDialog):
         self.Worker1.start()
 
     def actualizar(self, valor, tiempo):
-        if self.Worker1.serie.is_open:
-            valor = int(self.RFlog.predict(valor))
-            valor= np.reshape(np.array(valor),(-1,1))
-            for i in valor:
-                self.progressBar.value(valor)
-                self.labelPeso.setText(f'Peso: {valor} gramos')
-                name = 'Peso'
-                if name in self.traces:
-                    self.traces[name].setData(tiempo,valor)
-                else:
-                    self.traces[name] = self.graphicsView.plot(pen='y')
+        #if self.Worker1.serie.is_open:
+        valor1= np.reshape(np.array(valor),(-1,1))
+        valor2 = int(self.RFlog.predict(valor1))
+        
+        #for i in valor:
+        self.progressBar.setValue(valor2)
+        self.labelPeso.setText(f'Peso: {valor2} gramos')
+        # name = 'Peso'
+        # if name in self.traces:
+        #     self.traces[name].setData(tiempo,valor)
+        # else:
+        #     self.traces[name] = self.graphicsView.plot(pen='y')
 
     def iniciar(self):
-        self.Worker1.serie.is_open = True
+        try:
+            self.Worker1.serie.open()
+        except:
+            pass
 
     def parar(self):
-        self.Worker1.serie.is_open= False
+        self.Worker1.serie.close()
 
     def volver(self):
         self.close()
 
 class Worker1(QThread):
 
-    update = pyqtSignal(list, float)
+    update = pyqtSignal(float, float)
 
     def __init__(self, puerto, fm, baudrate = 9600):
         super().__init__()
@@ -100,8 +105,8 @@ class Worker1(QThread):
         self.baudrate = baudrate
         self.tiempo = 0
         self.serie = serial.Serial(port = self.puerto, baudrate = self.baudrate)
-        self.tiempos  = []
-        self.valores = []
+        # self.tiempos  = []
+        # self.valores = []
 
     def run(self):
         try:
@@ -110,19 +115,20 @@ class Worker1(QThread):
         except:
             self.serie.open()
         while self.serie.isOpen():
-            valor = int.from_bytes(self.serie.readline(), 'big')
-            print(valor)
-            valor = int(valor*5/1023) #Si 1023 son 5V, cuanto es el valor que tenemos ahora en en Voltaje segun bit
-            #valor = 2
-            self.tiempo += self.muestreo
-            self.tiempos.append(self.tiempos)
-            self.valores.append(self.valores)
-            if len(self.tiempos) > 10:
-                self.update.emit(self.valores, self.tiempos)
-                self.valores = []
-                self.tiempos = []
+            if self.serie.in_waiting:
+                bits = int.from_bytes(self.serie.read(), 'little')
+                #print(valor)
+                voltaje = float(bits*5/1023) #Si 1023 son 5V, cuanto es el valor que tenemos ahora en en Voltaje segun bit
+                #valor = 2
+                self.tiempo += self.muestreo
+                #self.tiempos.append(self.tiempo)
+                #self.valores.append(valor)
+                self.update.emit(voltaje, self.tiempo)
+                # self.valores = []
+                # self.tiempos = []
+                time.sleep(1)
 
 App = QApplication(sys.argv)
-Root = Visualizacion('COM3')
+Root = MainWindow()
 Root.show()
 App.exec_()
