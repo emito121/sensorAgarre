@@ -23,6 +23,8 @@ void iniTimer2()
   TIMSK2 |= (1 << OCIE2A);    //ver pagina 160
 }
 
+int contador =0;
+
 void setup() {
   Serial.begin(9600);//iniciailzamos la comunicación
   pinMode(A0, INPUT);
@@ -35,7 +37,11 @@ void loop() {
 
 ISR(TIMER2_COMPA_vect)//Rutina interrupción Timer1, configurado a 10ms
 {
-  byte valor = analogRead(A0);
-  //Serial.write(valor);
-  Serial.println(valor);
+  contador += 1;
+  if (contador == 10){
+    byte valor = analogRead(A0);
+    Serial.write(valor);
+    contador = 0;
+  }
+  //Serial.println(valor);
   }

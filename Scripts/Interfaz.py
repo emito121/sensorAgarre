@@ -25,6 +25,7 @@ class MainWindow(QDialog):
         baudrate = int(self.lineBaudrate.text())
         fm = int(self.lineFM.text())
         Ventana = Visualizacion(puerto, baudrate, fm)
+        #self.close()
         Ventana.exec_()
 
     def Cerrar(self):
@@ -41,6 +42,8 @@ class Visualizacion(QDialog):
         self.btnStop.clicked.connect(self.parar)
         # fichero = open(os.path.realpath('C:/Users/usuario_2/Documents/sensorAgarre/Modelo de funciones mediante ML/RF'), 'rb')
         # self.RF = pickle.load(fichero)
+        self.valores = []
+        self.tiempos = []
         y = [a for a in range(0,1100,100)]
         y.insert(1, 50)
         y.insert(1, 25)
@@ -52,51 +55,51 @@ class Visualizacion(QDialog):
         y= np.reshape(y,(-1,1))
 
         from sklearn.compose import TransformedTargetRegressor
-        # RFlog = TransformedTargetRegressor(RF,
-        #                                   func = lambda x: x,
-        #                                   inverse_func = lambda x: np.clip(x, 0, 1000))
-
-        #self.RF.fit(x,y)
         self.RFlog = TransformedTargetRegressor(self.RF,
-                                  func = lambda x: x,
-                                  inverse_func = lambda x: np.clip(x, 0, 1000))
+                                          func = lambda x: x,
+                                          inverse_func = lambda x: np.clip(x, 0, 1000))
+        self.sampling = False
+        self.traces = dict()
+        #pg.setConfigOptions(antialias=True)
+
         self.RFlog.fit(x,y)
         self.Worker1 = Worker1(puerto =puerto, baudrate = baudrate, fm = fm)
         self.Worker1.update.connect(self.actualizar)
-        self.sampling = False
-        self.traces = dict()
-        pg.setConfigOptions(antialias=True)
         self.Worker1.start()
-
-    def actualizar(self, valor, tiempo):
-        #if self.Worker1.serie.is_open:
-        valor1= np.reshape(np.array(valor),(-1,1))
-        valor2 = int(self.RFlog.predict(valor1))
-        
-        #for i in valor:
-        self.progressBar.setValue(valor2)
-        self.labelPeso.setText(f'Peso: {valor2} gramos')
-        # name = 'Peso'
-        # if name in self.traces:
-        #     self.traces[name].setData(tiempo,valor)
-        # else:
-        #     self.traces[name] = self.graphicsView.plot(pen='y')
+    
+    def actualizar(self, tiempo, valor):
+        # if self.Worker1.serie.is_open:
+        #valor = np.array(valor)
+        #self.progressBar.setValue(tierra)
+        # newValues = []
+        # for valor in valores:
+        valor1 = np.array(valor)
+        valor2= np.reshape(valor1,(-1,1))
+        valor4 = int(self.RFlog.predict(valor2))
+        self.progressBar.setValue(valor4)
+        self.labelPeso.setText(f'Peso: {valor4} gramos')
+        self.valores.append(valor4)
+        self.tiempos.append(tiempo)
+        # newValues.append(valor)
+        name = 'Peso'
+        if name in self.traces:
+            self.traces[name].setData(self.tiempos,self.valores)
+        else:
+            self.traces[name] = self.graphicsView.plot(pen='y')
 
     def iniciar(self):
-        try:
-            self.Worker1.serie.open()
-        except:
-            pass
+        self.Worker1.serie.open()
 
     def parar(self):
         self.Worker1.serie.close()
 
     def volver(self):
+        self.Worker1.serie.close()
         self.close()
 
 class Worker1(QThread):
 
-    update = pyqtSignal(float, float)
+    update = pyqtSignal(float,float)
 
     def __init__(self, puerto, fm, baudrate = 9600):
         super().__init__()
@@ -105,28 +108,27 @@ class Worker1(QThread):
         self.baudrate = baudrate
         self.tiempo = 0
         self.serie = serial.Serial(port = self.puerto, baudrate = self.baudrate)
-        # self.tiempos  = []
-        # self.valores = []
+        time.sleep(2)
+        self.tiempos  = []
+        self.valores = []
 
     def run(self):
         try:
-            self.serie.close()
             self.serie.open()
         except:
-            self.serie.open()
-        while self.serie.isOpen():
-            if self.serie.in_waiting:
-                bits = int.from_bytes(self.serie.read(), 'little')
-                #print(valor)
-                voltaje = float(bits*5/1023) #Si 1023 son 5V, cuanto es el valor que tenemos ahora en en Voltaje segun bit
-                #valor = 2
-                self.tiempo += self.muestreo
-                #self.tiempos.append(self.tiempo)
-                #self.valores.append(valor)
-                self.update.emit(voltaje, self.tiempo)
-                # self.valores = []
-                # self.tiempos = []
-                time.sleep(1)
+            #self.serie.open()
+            while self.serie.isOpen():
+                if self.serie.in_waiting:
+
+                    mensaje = self.serie.read()
+                    mensaje = int.from_bytes(mensaje, 'little')
+
+                    valor = mensaje*5/255 #Si 1023 son 5V, cuanto es el valor que tenemos ahora en en Voltaje segun bit
+
+                    self.tiempo += self.muestreo
+
+                    self.update.emit(self.tiempo, valor)
+
 
 App = QApplication(sys.argv)
 Root = MainWindow()

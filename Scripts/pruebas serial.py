@@ -1,8 +1,7 @@
+from socket import timeout
 import serial
 import numpy as np
 import time
-
-serie = serial.Serial(port = 'COM3', baudrate = 9600)
 
 y = [a for a in range(0,1100,100)]
 y.insert(1, 50)
@@ -15,33 +14,30 @@ x= np.reshape(x,(-1,1))
 y= np.reshape(y,(-1,1))
 
 from sklearn.compose import TransformedTargetRegressor
-
 RFlog = TransformedTargetRegressor(RF,
-                        func = lambda x: x,
-                        inverse_func = lambda x: np.clip(x, 0, 1000))
+                                    func = lambda x: x,
+                                    inverse_func = lambda x: np.clip(x, 0, 1000))
+
 RFlog.fit(x,y)
+# print(x)
 
-try:
-    serie.open()
-except:
-    while serie.isOpen():
-        if serie.in_waiting:
-            bits = serie.read(8)
+serie = serial.Serial(port = 'COM11', baudrate = 9600, timeout = 1)
+time.sleep(2)
+#serie.set_buffer_size = 1
 
-            bits = int.from_bytes(bits, 'little')
-            
-            voltaje = float(bits*5/255)
-
-            print(voltaje)
-
-            valor1= np.reshape(np.array(voltaje),(-1,1))
-            valor2 = int(RFlog.predict(valor1))
-
-            print(valor2)
-            
-            # RFlog = TransformedTargetRegressor(RF,
-            #                                   func = lambda x: x,
-            #                                   inverse_func = lambda x: np.clip(x, 0, 1000))
-
-            #self.RF.fit(x,y)
+while True:
+    if serie.in_waiting:
+        mensaje = serie.read()
+        mensaje = int.from_bytes(mensaje, 'little')
+        #mensaje = int(mensaje.decode())
+        
+        valor = mensaje*5/255
+        valor1 = np.array(valor)
+        valor2= np.reshape(valor1,(-1,1))
+        
+        #print(mensaje)      
+        #print(serie.inWaiting())
+        fuerza = RFlog.predict(valor2)
+        print(fuerza)
+        #time.sleep(1)
 

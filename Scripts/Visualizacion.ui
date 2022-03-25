@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>599</width>
-    <height>275</height>
+    <width>695</width>
+    <height>334</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -19,10 +19,10 @@
   <widget class="QProgressBar" name="progressBar">
    <property name="geometry">
     <rect>
-     <x>450</x>
+     <x>510</x>
      <y>0</y>
-     <width>131</width>
-     <height>271</height>
+     <width>181</width>
+     <height>331</height>
     </rect>
    </property>
    <property name="styleSheet">
@@ -56,8 +56,8 @@ border-radius :15px;
     <rect>
      <x>10</x>
      <y>0</y>
-     <width>403</width>
-     <height>270</height>
+     <width>491</width>
+     <height>331</height>
     </rect>
    </property>
    <layout class="QVBoxLayout" name="verticalLayout">
