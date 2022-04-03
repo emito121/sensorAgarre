@@ -1,47 +1,31 @@
-#define F_CPU 16000000UL // Defining the CPU Frequency
+#define F_CPU 16000000UL
+#include <avr/io.h>      
+#include <util/delay.h>  
+#include <avr/interrupt.h>
 
-//#define FREC_INTERRUPT  100000 //en Hz
-//#define PRE_SCALER      1UL
-
-#include <avr/io.h>      // Contains all the I/O Register Macros
-#include <util/delay.h>  // Generates a Blocking Delay
-#include <avr/interrupt.h> // Contains all interrupt vectors
-
-void iniTimer2()
+void iniTimer2() //Extraído del firmware de la carrera de vehículos por EEG
 {
-  TCCR2A = 0;// pongo a cero el registro de control del timer2 (pagina 155)
-  TCCR2B = 0;// idem para TCCR2B
-  TCNT2  = 0;//valor inicial del contador en 0
-  // Seteo el preescaler en 1
+  TCCR2A = 0;
+  TCCR2B = 0;
+  TCNT2  = 0;
   TCCR2B |= (1 << CS22) | (1 << CS21) | (1 << CS20);
-  //seteamos el timer2 para interrupción cada 1ms, que es el máximo tiempo que podemos alcanzar
-  OCR2A = 155; // = (16MHz/(preScaler*frecuencia de Interrupción))-1
-  //Modo Contador (Clear Timer on Compare Match (CTC))
+  OCR2A = 155;
   TCCR2A |= (1 << WGM21);
-
-  // Habilito la comparación
-  TIMSK2 |= (1 << OCIE2A);    //ver pagina 160
+  TIMSK2 |= (1 << OCIE2A); 
 }
 
-int contador =0;
-
 void setup() {
-  Serial.begin(9600);//iniciailzamos la comunicación
+  Serial.begin(9600);
   pinMode(A0, INPUT);
-  iniTimer2(); //inicio timer 2
-  interrupts();//Habilito las interrupciones
+  iniTimer2(); //timer a 100 Hz
+  interrupts();
 }
 
 void loop() {
 }
 
-ISR(TIMER2_COMPA_vect)//Rutina interrupción Timer1, configurado a 10ms
+ISR(TIMER2_COMPA_vect)
 {
-  contador += 1;
-  if (contador == 10){
     byte valor = analogRead(A0);
     Serial.write(valor);
-    contador = 0;
-  }
-  //Serial.println(valor);
-  }
+}
